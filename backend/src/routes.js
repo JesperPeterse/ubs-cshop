@@ -76,4 +76,35 @@ router.get('/orders/:id', async (req, res) => {
   });
 });
 
+// Add a new product
+router.post('/products', async (req, res) => {
+  const { name, description, price, image } = req.body;
+  if (!name || !price) {
+    return res.status(400).json({ error: 'Name and price are required' });
+  }
+  const product = await Product.create({ name, description, price, image });
+  res.status(201).json(product);
+});
+
+// Edit an existing product
+router.put('/products/:id', async (req, res) => {
+  const { name, description, price, image } = req.body;
+  const product = await Product.findByPk(req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  product.name = name ?? product.name;
+  product.description = description ?? product.description;
+  product.price = price ?? product.price;
+  product.image = image ?? product.image;
+  await product.save();
+  res.json(product);
+});
+
+// Delete a product
+router.delete('/products/:id', async (req, res) => {
+  const product = await Product.findByPk(req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  await product.destroy();
+  res.json({ success: true });
+});
+
 module.exports = router;

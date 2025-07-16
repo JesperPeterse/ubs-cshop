@@ -5,6 +5,7 @@ import ProductCatalog from './ProductCatalog';
 import CartPage from './CartPage';
 import CheckoutPage from './CheckoutPage';
 import ConfirmationPage from './ConfirmationPage';
+import AdminPanel from './AdminPanel';
 
 export const CartContext = createContext();
 
@@ -72,6 +73,7 @@ function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/confirmation/:orderId" element={<ConfirmationPage />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Routes>
         </Container>
       </Router>

@@ -28,27 +28,32 @@ function ProductCatalog() {
     <>
       <Grid container spacing={3}>
         {products.map(product => (
-          <Grid item xs={12} sm={6} md={4} key={product.id}>
-            <Card>
+          <Grid item xs={12} sm={6} md={4} key={product.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Card sx={{ width: 300, height: 350, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <CardMedia
                 component="img"
                 height="140"
                 image={product.image}
                 alt={product.name}
+                sx={{ objectFit: 'contain', p: 2, background: '#fafafa' }}
               />
-              <CardContent>
-                <Typography gutterBottom variant="h6" component="div">
-                  {product.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {product.description}
-                </Typography>
-                <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                  ${product.price.toFixed(2)}
-                </Typography>
-                <Button variant="contained" sx={{ mt: 2 }} onClick={() => handleAddToCart(product)}>
-                  Add to Cart
-                </Button>
+              <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <Typography gutterBottom variant="h6" component="div">
+                    {product.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {product.description}
+                  </Typography>
+                </div>
+                <div>
+                  <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                    ${product.price.toFixed(2)}
+                  </Typography>
+                  <Button variant="contained" sx={{ mt: 2 }} onClick={() => handleAddToCart(product)} fullWidth>
+                    Add to Cart
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </Grid>
