@@ -15,7 +15,10 @@ import OrdersPage from './OrdersPage';
 export const CartContext = createContext();
 
 function CartProvider({ children }) {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    const stored = localStorage.getItem('cart');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -43,6 +46,10 @@ function CartProvider({ children }) {
   };
 
   const clearCart = () => setCart([]);
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
 
   return (
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
