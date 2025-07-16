@@ -1,6 +1,8 @@
 import React, { useState, createContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Container, Button, Badge } from '@mui/material';
+import { AppBar, Toolbar, Typography, Container, Button, Badge, Menu, MenuItem, Avatar } from '@mui/material';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ProductCatalog from './ProductCatalog';
 import CartPage from './CartPage';
 import CheckoutPage from './CheckoutPage';
@@ -52,6 +54,19 @@ function CartProvider({ children }) {
 function App() {
   const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token'));
   const [userName, setUserName] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  const handleLogoutMenu = () => {
+    handleLogout();
+    handleMenuClose();
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -94,11 +109,6 @@ function App() {
               USB-C Cable Shop
             </Typography>
             <Button color="inherit" component={Link} to="/">Products</Button>
-            {loggedIn && userName && (
-              <Typography sx={{ mx: 2 }}>
-                Hallo {userName}
-              </Typography>
-            )}
             <CartContext.Consumer>
               {({ cart }) => (
                 <Button color="inherit" component={Link} to="/cart">
@@ -108,18 +118,45 @@ function App() {
                 </Button>
               )}
             </CartContext.Consumer>
-            {loggedIn ? (
+            {loggedIn && userName && (
               <>
-                <Button color="inherit" component={Link} to="/orders">Mijn Bestellingen</Button>
-                <Button color="inherit" onClick={handleLogout}>Uitloggen</Button>
+                <Button
+                  color="inherit"
+                  onClick={handleMenuClick}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    borderBottom: open ? 2 : 0,
+                    borderColor: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    backgroundColor: open ? 'action.selected' : 'inherit',
+                    '&:hover': { backgroundColor: 'action.hover', cursor: 'pointer' }
+                  }}
+                  endIcon={<ArrowDropDownIcon />}
+                  startIcon={<AccountCircleIcon />}
+                >
+                  Hallo {userName}
+                </Button>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={open}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem component={Link} to="/orders" onClick={handleMenuClose}>Mijn Bestellingen</MenuItem>
+                  <MenuItem onClick={handleLogoutMenu}>Uitloggen</MenuItem>
+                </Menu>
               </>
-            ) : (
+            )}
+            {!loggedIn && (
               <>
                 <Button color="inherit" component={Link} to="/login">Inloggen</Button>
                 <Button color="inherit" component={Link} to="/register">Registreren</Button>
               </>
             )}
-            <Button color="inherit" component={Link} to="/admin">Admin</Button>
           </Toolbar>
         </AppBar>
         <Container sx={{ mt: 4 }}>
