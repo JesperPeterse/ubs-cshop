@@ -48,7 +48,7 @@ function ProductCatalog() {
                 </div>
                 <div>
                   <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                    ${product.price.toFixed(2)}
+                    €{product.price.toFixed(2)}
                   </Typography>
                   <Button variant="contained" sx={{ mt: 2 }} onClick={() => handleAddToCart(product)} fullWidth>
                     Add to Cart
