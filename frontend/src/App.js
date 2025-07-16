@@ -73,7 +73,15 @@ function App() {
               USB-C Cable Shop
             </Typography>
             <Button color="inherit" component={Link} to="/">Products</Button>
-            <Button color="inherit" component={Link} to="/cart">Cart</Button>
+            <CartContext.Consumer>
+              {({ cart }) => (
+                <Button color="inherit" component={Link} to="/cart">
+                  <Badge badgeContent={cart.reduce((sum, item) => sum + item.quantity, 0)} color="secondary">
+                    Cart
+                  </Badge>
+                </Button>
+              )}
+            </CartContext.Consumer>
             {loggedIn ? (
               <>
                 <Button color="inherit" component={Link} to="/orders">Mijn Bestellingen</Button>

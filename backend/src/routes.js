@@ -18,12 +18,12 @@ function auth(req, res, next) {
 
 // Register
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name, street, postcode, city } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   const exists = await User.findOne({ where: { email, isGuest: false } });
   if (exists) return res.status(400).json({ error: 'Email already registered' });
   const hash = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hash, isGuest: false });
+  const user = await User.create({ email, password: hash, isGuest: false, name, street, postcode, city });
   res.status(201).json({ success: true });
 });
 
@@ -75,20 +75,60 @@ router.get('/products', async (req, res) => {
   res.json(products);
 });
 
-// POST /api/guest-checkout - create guest user, order, and order items
-// Expects: { cart: [{ productId, quantity }], shipping: { name, address, ... } }
+// Get user profile (address)
+router.get('/profile', auth, async (req, res) => {
+  const user = await User.findByPk(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  res.json({ email: user.email, name: user.name, street: user.street, postcode: user.postcode, city: user.city });
+});
+
+// Update user profile (address)
+router.put('/profile', auth, async (req, res) => {
+  const { name, street, postcode, city } = req.body;
+  const user = await User.findByPk(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.name = name;
+  user.street = street;
+  user.postcode = postcode;
+  user.city = city;
+  await user.save();
+  res.json({ success: true });
+});
+
+// Update guest-checkout to use user address if logged in, and update user address if provided
 router.post('/guest-checkout', async (req, res) => {
   const { cart, shipping } = req.body;
+  let user = null;
+  // If JWT is provided, use logged-in user
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      user = await User.findByPk(decoded.id);
+      // If shipping info is provided, update user address
+      if (user && shipping && shipping.naam && shipping.straat && shipping.postcode && shipping.plaats) {
+        user.name = shipping.naam;
+        user.street = shipping.straat;
+        user.postcode = shipping.postcode;
+        user.city = shipping.plaats;
+        await user.save();
+      }
+    } catch (e) { user = null; }
+  }
   if (!cart || !Array.isArray(cart) || cart.length === 0) {
     return res.status(400).json({ error: 'Cart is empty' });
   }
-  if (!shipping || !shipping.email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
-  // Reuse guest user if email exists, otherwise create
-  let guest = await User.findOne({ where: { email: shipping.email, isGuest: true } });
-  if (!guest) {
-    guest = await User.create({ isGuest: true, email: shipping.email });
+  let guest = null;
+  if (!user) {
+    if (!shipping || !shipping.email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    // Reuse guest user if email exists, otherwise create
+    guest = await User.findOne({ where: { email: shipping.email, isGuest: true } });
+    if (!guest) {
+      guest = await User.create({ isGuest: true, email: shipping.email });
+    }
   }
   // Calculate total and create order
   let total = 0;
@@ -110,11 +150,10 @@ router.post('/guest-checkout', async (req, res) => {
     return res.status(402).json({ error: 'Payment failed' });
   }
   // Create order and order items
-  const order = await Order.create({ UserId: guest.id, total, status: 'paid' });
+  const order = await Order.create({ UserId: (user ? user.id : guest.id), total, status: 'paid' });
   for (const item of orderItems) {
     await OrderItem.create({ ...item, OrderId: order.id });
   }
-  // Optionally, save shipping info (not modeled here)
   res.json({ orderId: order.id, message: 'Order placed successfully', total });
 });
 

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { CartContext } from './App';
 import { Typography, TextField, Button, Box, Alert, CircularProgress } from '@mui/material';
 import axios from 'axios';
@@ -9,7 +9,30 @@ function CheckoutPage() {
   const [shipping, setShipping] = useState({ naam: '', email: '', straat: '', postcode: '', plaats: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('http://localhost:4000/api/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => {
+          setShipping(s => ({
+            ...s,
+            naam: res.data.name || '',
+            straat: res.data.street || '',
+            postcode: res.data.postcode || '',
+            plaats: res.data.city || '',
+            email: res.data.email || ''
+          }));
+        })
+        .finally(() => setProfileLoading(false));
+    } else {
+      setProfileLoading(false);
+    }
+  }, []);
 
   const handleChange = (e) => {
     setShipping({ ...shipping, [e.target.name]: e.target.value });
@@ -22,11 +45,11 @@ function CheckoutPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!shipping.naam || !shipping.email || !shipping.straat || !shipping.postcode || !shipping.plaats) {
+    if (!shipping.naam || !shipping.straat || !shipping.postcode || !shipping.plaats || (!localStorage.getItem('token') && !shipping.email)) {
       setError('Vul alle velden in.');
       return;
     }
-    if (!validateEmail(shipping.email)) {
+    if (!localStorage.getItem('token') && !validateEmail(shipping.email)) {
       setError('Voer een geldig e-mailadres in.');
       return;
     }
@@ -36,10 +59,11 @@ function CheckoutPage() {
     }
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:4000/api/guest-checkout', {
         cart: cart.map(item => ({ productId: item.product.id, quantity: item.quantity })),
         shipping,
-      });
+      }, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
       clearCart();
       navigate(`/confirmation/${response.data.orderId}`);
     } catch (err) {
@@ -48,6 +72,8 @@ function CheckoutPage() {
       setLoading(false);
     }
   };
+
+  if (profileLoading) return <CircularProgress />;
 
   return (
     <Box maxWidth={400} mx="auto">
@@ -63,16 +89,18 @@ function CheckoutPage() {
           margin="normal"
           required
         />
-        <TextField
-          label="E-mailadres"
-          name="email"
-          value={shipping.email}
-          onChange={handleChange}
-          fullWidth
-          margin="normal"
-          required
-          type="email"
-        />
+        { !localStorage.getItem('token') && (
+          <TextField
+            label="E-mailadres"
+            name="email"
+            value={shipping.email}
+            onChange={handleChange}
+            fullWidth
+            margin="normal"
+            required
+            type="email"
+          />
+        )}
         <TextField
           label="Straat en huisnummer"
           name="straat"

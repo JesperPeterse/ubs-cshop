@@ -11,6 +11,10 @@ const User = sequelize.define('User', {
   email: { type: DataTypes.STRING, allowNull: false },
   password: { type: DataTypes.STRING }, // nullable for guest
   isGuest: { type: DataTypes.BOOLEAN, defaultValue: false },
+  name: { type: DataTypes.STRING },
+  street: { type: DataTypes.STRING },
+  postcode: { type: DataTypes.STRING },
+  city: { type: DataTypes.STRING },
 });
 
 const Product = sequelize.define('Product', {
