@@ -61,6 +61,7 @@ function CartProvider({ children }) {
 function App() {
   const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token'));
   const [userName, setUserName] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -75,6 +76,7 @@ function App() {
     handleMenuClose();
   };
 
+  // Always fetch profile on mount and when loggedIn changes
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -86,24 +88,28 @@ function App() {
           if (res.ok) {
             const data = await res.json();
             setUserName(data.name || data.email);
+            setIsAdmin(!!data.isAdmin);
+          } else {
+            setUserName('');
+            setIsAdmin(false);
           }
-        } catch {}
+        } catch {
+          setUserName('');
+          setIsAdmin(false);
+        }
       } else {
         setUserName('');
+        setIsAdmin(false);
       }
     };
     fetchProfile();
-    const onStorage = () => {
-      setLoggedIn(!!localStorage.getItem('token'));
-      fetchProfile();
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
   }, [loggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setLoggedIn(false);
+    setUserName('');
+    setIsAdmin(false);
     window.location.href = '/';
   };
 
@@ -130,17 +136,7 @@ function App() {
                 <Button
                   color="inherit"
                   onClick={handleMenuClick}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderBottom: open ? 2 : 0,
-                    borderColor: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    backgroundColor: open ? 'action.selected' : 'inherit',
-                    '&:hover': { backgroundColor: 'action.hover', cursor: 'pointer' }
-                  }}
+                  sx={{ textTransform: 'none', fontWeight: 600, borderBottom: open ? 2 : 0, borderColor: 'primary.main', display: 'flex', alignItems: 'center', gap: 1, backgroundColor: open ? 'action.selected' : 'inherit', '&:hover': { backgroundColor: 'action.hover', cursor: 'pointer' } }}
                   endIcon={<ArrowDropDownIcon />}
                   startIcon={<AccountCircleIcon />}
                 >
@@ -154,6 +150,9 @@ function App() {
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
                   <MenuItem component={Link} to="/orders" onClick={handleMenuClose}>Mijn Bestellingen</MenuItem>
+                  {isAdmin && (
+                    <MenuItem component={Link} to="/admin" onClick={handleMenuClose}>Admin</MenuItem>
+                  )}
                   <MenuItem onClick={handleLogoutMenu}>Uitloggen</MenuItem>
                 </Menu>
               </>

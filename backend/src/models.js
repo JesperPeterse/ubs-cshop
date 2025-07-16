@@ -11,6 +11,7 @@ const User = sequelize.define('User', {
   email: { type: DataTypes.STRING, allowNull: false },
   password: { type: DataTypes.STRING }, // nullable for guest
   isGuest: { type: DataTypes.BOOLEAN, defaultValue: false },
+  isAdmin: { type: DataTypes.BOOLEAN, defaultValue: false },
   name: { type: DataTypes.STRING },
   street: { type: DataTypes.STRING },
   postcode: { type: DataTypes.STRING },
@@ -73,4 +74,14 @@ async function seedProducts() {
   }
 }
 
-module.exports = { sequelize, User, Product, Order, OrderItem, seedProducts };
+async function ensureIsAdminColumn() {
+  // Check if the column exists
+  const [results] = await sequelize.query("PRAGMA table_info('Users')");
+  const hasIsAdmin = results.some(col => col.name === 'isAdmin');
+  if (!hasIsAdmin) {
+    await sequelize.query("ALTER TABLE Users ADD COLUMN isAdmin BOOLEAN DEFAULT 0");
+    console.log('Added isAdmin column to Users table');
+  }
+}
+
+module.exports = { sequelize, User, Product, Order, OrderItem, seedProducts, ensureIsAdminColumn };

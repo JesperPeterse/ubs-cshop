@@ -16,6 +16,20 @@ function auth(req, res, next) {
   });
 }
 
+// Admin middleware
+function adminAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'No token' });
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    const dbUser = await User.findByPk(user.id);
+    if (!dbUser || !dbUser.isAdmin) return res.status(403).json({ error: 'Not an admin' });
+    req.user = dbUser;
+    next();
+  });
+}
+
 // Register
 router.post('/register', async (req, res) => {
   const { email, password, name, street, postcode, city } = req.body;
@@ -79,7 +93,7 @@ router.get('/products', async (req, res) => {
 router.get('/profile', auth, async (req, res) => {
   const user = await User.findByPk(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ email: user.email, name: user.name, street: user.street, postcode: user.postcode, city: user.city });
+  res.json({ email: user.email, name: user.name, street: user.street, postcode: user.postcode, city: user.city, isAdmin: user.isAdmin });
 });
 
 // Update user profile (address)
@@ -182,8 +196,8 @@ router.get('/orders/:id', async (req, res) => {
   });
 });
 
-// Add a new product
-router.post('/products', async (req, res) => {
+// Add a new product (admin only)
+router.post('/products', adminAuth, async (req, res) => {
   const { name, description, price, image } = req.body;
   if (!name || !price) {
     return res.status(400).json({ error: 'Name and price are required' });
@@ -192,8 +206,8 @@ router.post('/products', async (req, res) => {
   res.status(201).json(product);
 });
 
-// Edit an existing product
-router.put('/products/:id', async (req, res) => {
+// Edit an existing product (admin only)
+router.put('/products/:id', adminAuth, async (req, res) => {
   const { name, description, price, image } = req.body;
   const product = await Product.findByPk(req.params.id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
@@ -205,8 +219,8 @@ router.put('/products/:id', async (req, res) => {
   res.json(product);
 });
 
-// Delete a product
-router.delete('/products/:id', async (req, res) => {
+// Delete a product (admin only)
+router.delete('/products/:id', adminAuth, async (req, res) => {
   const product = await Product.findByPk(req.params.id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
   await product.destroy();
