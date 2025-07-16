@@ -1,6 +1,73 @@
 const express = require('express');
 const { User, Product, Order, OrderItem } = require('./models');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+// JWT middleware
+function auth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: 'No token' });
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
+
+// Register
+router.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  const exists = await User.findOne({ where: { email, isGuest: false } });
+  if (exists) return res.status(400).json({ error: 'Email already registered' });
+  const hash = await bcrypt.hash(password, 10);
+  const user = await User.create({ email, password: hash, isGuest: false });
+  res.status(201).json({ success: true });
+});
+
+// Login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  const user = await User.findOne({ where: { email, isGuest: false } });
+  if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return res.status(400).json({ error: 'Invalid credentials' });
+  const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token });
+});
+
+// Authenticated order history
+router.get('/orders', auth, async (req, res) => {
+  const user = await User.findByPk(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const orders = await Order.findAll({
+    where: { UserId: user.id },
+    include: [
+      {
+        model: OrderItem,
+        include: [Product],
+      },
+    ],
+    order: [['createdAt', 'DESC']],
+  });
+  res.json(orders.map(order => ({
+    id: order.id,
+    total: order.total,
+    status: order.status,
+    createdAt: order.createdAt,
+    items: order.OrderItems.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      product: {
+        name: item.Product.name,
+      },
+    })),
+  })));
+});
 
 // GET /api/products - list all products
 router.get('/products', async (req, res) => {

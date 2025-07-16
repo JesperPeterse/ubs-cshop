@@ -6,6 +6,9 @@ import CartPage from './CartPage';
 import CheckoutPage from './CheckoutPage';
 import ConfirmationPage from './ConfirmationPage';
 import AdminPanel from './AdminPanel';
+import LoginPage from './LoginPage';
+import RegisterPage from './RegisterPage';
+import OrdersPage from './OrdersPage';
 
 export const CartContext = createContext();
 
@@ -47,6 +50,20 @@ function CartProvider({ children }) {
 }
 
 function App() {
+  const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token'));
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setLoggedIn(false);
+    window.location.href = '/';
+  };
+
+  React.useEffect(() => {
+    const onStorage = () => setLoggedIn(!!localStorage.getItem('token'));
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   return (
     <CartProvider>
       <Router>
@@ -56,15 +73,19 @@ function App() {
               USB-C Cable Shop
             </Typography>
             <Button color="inherit" component={Link} to="/">Products</Button>
-            <CartContext.Consumer>
-              {({ cart }) => (
-                <Button color="inherit" component={Link} to="/cart">
-                  <Badge badgeContent={cart.reduce((sum, item) => sum + item.quantity, 0)} color="secondary">
-                    Cart
-                  </Badge>
-                </Button>
-              )}
-            </CartContext.Consumer>
+            <Button color="inherit" component={Link} to="/cart">Cart</Button>
+            {loggedIn ? (
+              <>
+                <Button color="inherit" component={Link} to="/orders">Mijn Bestellingen</Button>
+                <Button color="inherit" onClick={handleLogout}>Uitloggen</Button>
+              </>
+            ) : (
+              <>
+                <Button color="inherit" component={Link} to="/login">Inloggen</Button>
+                <Button color="inherit" component={Link} to="/register">Registreren</Button>
+              </>
+            )}
+            <Button color="inherit" component={Link} to="/admin">Admin</Button>
           </Toolbar>
         </AppBar>
         <Container sx={{ mt: 4 }}>
@@ -74,6 +95,9 @@ function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/confirmation/:orderId" element={<ConfirmationPage />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
           </Routes>
         </Container>
       </Router>
