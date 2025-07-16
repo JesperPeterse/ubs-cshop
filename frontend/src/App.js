@@ -1,4 +1,4 @@
-import React, { useState, createContext } from 'react';
+import React, { useState, createContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AppBar, Toolbar, Typography, Container, Button, Badge } from '@mui/material';
 import ProductCatalog from './ProductCatalog';
@@ -51,18 +51,39 @@ function CartProvider({ children }) {
 
 function App() {
   const [loggedIn, setLoggedIn] = React.useState(!!localStorage.getItem('token'));
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch('http://localhost:4000/api/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUserName(data.name || data.email);
+          }
+        } catch {}
+      } else {
+        setUserName('');
+      }
+    };
+    fetchProfile();
+    const onStorage = () => {
+      setLoggedIn(!!localStorage.getItem('token'));
+      fetchProfile();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [loggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     setLoggedIn(false);
     window.location.href = '/';
   };
-
-  React.useEffect(() => {
-    const onStorage = () => setLoggedIn(!!localStorage.getItem('token'));
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
   return (
     <CartProvider>
@@ -73,6 +94,11 @@ function App() {
               USB-C Cable Shop
             </Typography>
             <Button color="inherit" component={Link} to="/">Products</Button>
+            {loggedIn && userName && (
+              <Typography sx={{ mx: 2 }}>
+                Hallo {userName}
+              </Typography>
+            )}
             <CartContext.Consumer>
               {({ cart }) => (
                 <Button color="inherit" component={Link} to="/cart">

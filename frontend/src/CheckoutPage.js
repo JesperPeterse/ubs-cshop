@@ -77,7 +77,7 @@ function CheckoutPage() {
 
   return (
     <Box maxWidth={400} mx="auto">
-      <Typography variant="h5" gutterBottom>Gast afrekenen</Typography>
+      <Typography variant="h5" gutterBottom>{localStorage.getItem('token') ? 'Afrekenen' : 'Gast afrekenen'}</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <form onSubmit={handleSubmit}>
         <TextField

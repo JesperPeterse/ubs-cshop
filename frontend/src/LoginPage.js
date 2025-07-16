@@ -15,7 +15,7 @@ function LoginPage() {
     try {
       const res = await axios.post('http://localhost:4000/api/login', { email, password });
       localStorage.setItem('token', res.data.token);
-      navigate('/orders');
+      navigate('/');
     } catch (err) {
       setError('Login mislukt. Controleer je gegevens.');
     }
