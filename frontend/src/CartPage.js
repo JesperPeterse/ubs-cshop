@@ -51,7 +51,7 @@ function CartPage() {
                 {cart.map(item => (
                   <TableRow key={item.product.id}>
                     <TableCell>{item.product.name}</TableCell>
-                    <TableCell>${item.product.price.toFixed(2)}</TableCell>
+                    <TableCell>€{item.product.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <TextField
                         type="number"
@@ -61,7 +61,7 @@ function CartPage() {
                         onChange={e => updateQuantity(item.product.id, Math.max(1, Number(e.target.value)))}
                       />
                     </TableCell>
-                    <TableCell>${(item.product.price * item.quantity).toFixed(2)}</TableCell>
+                    <TableCell>€{(item.product.price * item.quantity).toFixed(2)}</TableCell>
                     <TableCell>
                       <IconButton onClick={() => handleDeleteClick(item.product.id)}>
                         <DeleteIcon />
@@ -72,7 +72,7 @@ function CartPage() {
               </TableBody>
             </Table>
           </TableContainer>
-          <Typography variant="h6" sx={{ mb: 2 }}>Total: ${total.toFixed(2)}</Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>Total: €{total.toFixed(2)}</Typography>
           <Button variant="contained" color="primary" onClick={() => navigate('/checkout')}>Proceed to Checkout</Button>
 
           {/* Confirmation Dialog */}
